@@ -35,7 +35,7 @@ class SceneDelegate: RCTDefaultReactNativeFactoryDelegate, UIWindowSceneDelegate
       connectionOptions: connectionOptions
     )
 
-   
+    ConcurrentCommitter.start(with: reactNativeFactory!)
   }
 
   func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
