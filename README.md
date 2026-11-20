@@ -1,67 +1,79 @@
-# React Native Reproducer
+# rn-concurrent-commit-tsan-reproducer
+
+![Build](https://github.com/tjzel/rn-concurrent-commit-tsan-reproducer/workflows/Pre%20Merge%20Checks/badge.svg)
+
+This is your new React Native Reproducer project.
+
+# Reproducer TODO list
+
+- [x] 1. Create a new reproducer project.
+- [ ] 2. Git clone your repository locally.
+- [ ] 3. Edit the project to reproduce the failure you're seeing.
+- [ ] 4. Push your changes, so that Github Actions can run the CI.
+- [ ] 5. Make sure the repository is public and share the link with the issue you reported.
+
+# How to use this Reproducer
+
+This project has been created with `npx @react-native-community/cli init` and is a vanilla React Native app.
 
 > [!IMPORTANT]  
-> Do not just **fork** this repository, but use instead the [![Use this template](https://img.shields.io/badge/-Use%20this%20template-brightgreen)](https://github.com/cortinico/reproducer-react-native/generate) button on GitHub.
+> Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/set-up-your-environment) so that you have a working environment locally.
 
-This is the React Native **reproducer** template. 
+## Step 1: Start the Metro Server
 
-You can use this template to create a minimal, complete, and reproducible project that the community can use to understand what's your problem. You can read more about the principles of a good reproducible project [here](https://stackoverflow.com/help/mcve).
+First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
 
-This template is up to date with `react-native@latest` as you can find it on [npm](https://www.npmjs.com/package/react-native/v/latest).
+To start Metro, run the following command from the _root_ of your React Native project:
 
-## How to use this repository
+```bash
+# using npm
+npm start
 
-1. Click on [![Use this template](https://img.shields.io/badge/-Use%20this%20template-brightgreen)](https://github.com/cortinico/reproducer-react-native/generate) button to create a new repository starting from this one.
-2. Git clone your repository locally.
-3. Edit the project to reproduce the failure you're seeing.
-4. Push your changes, so that Github Actions can run the CI.
-
-## ThreadSanitizer reproducer
-
-This app shows two ThreadSanitizer (TSAN) reports on an iOS simulator:
-
-1. [react/react-native#60106](https://github.com/react/react-native/issues/60106): a data race on Yoga `Node::owner_`
-   between two overlapping `ShadowTree::commit` calls.
-2. [react/react-native#60130](https://github.com/react/react-native/issues/60130): a race between
-   `facebook::react::Task::execute` on the JS thread and the destruction of the same `Task` on a Hermes GC thread.
-
-What the app does:
-
-- `ReproducerApp/App.tsx` re-renders a 30 x 7 tree of `View`s and `Text`s in a loop from `useEffect`, so React commits
-  from the JS thread (`UIManager::completeSurface`) all the time and the scheduler creates and drops many `Task`s.
-- `ReproducerApp/ios/ReproducerApp/ConcurrentCommitter.mm` commits from the main thread on every `CADisplayLink`
-  frame. The transaction clones the whole shadow tree, like an animation library that updates props from the UI
-  thread. It is started from `SceneDelegate.swift`.
-
-### Steps
-
-Requirements: Xcode, Ruby with bundler, Node and Yarn, and a simulator.
-
-```sh
-cd ReproducerApp
-yarn
-scripts/tsan.sh <simulator udid> [seconds, default 60]
+# OR using Yarn
+yarn start
 ```
 
-`scripts/tsan.sh` runs `pod install` with React Native core built from source
-(`RCT_USE_PREBUILT_RNCORE=0 RCT_USE_RN_DEP=0`), so that TSAN instruments it, builds the Release configuration
-(the JS bundle is embedded, no Metro) with `-enableThreadSanitizer YES ENABLE_THREAD_SANITIZER=YES`, installs the app,
-launches it with `TSAN_OPTIONS="log_path=tsan-reports/tsan halt_on_error=0"`, waits, terminates it and prints the
-`SUMMARY:` lines of the reports in `ReproducerApp/tsan-reports/`. Use `SKIP_BUILD=1 scripts/tsan.sh <udid>` to run
-again without building.
+## Step 2: Start your Application
 
-### Expected output
+Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
 
-The Yoga race shows in every run; the `Task` race is intermittent (one run in six locally, 60 s each). Output of a run
-that showed both:
+### For Android
 
-```
-ThreadSanitizer reports in .../ReproducerApp/tsan-reports:
-   2 SUMMARY: ThreadSanitizer: data race YogaLayoutableShadowNode.cpp:130 in facebook::react::YogaLayoutableShadowNode::YogaLayoutableShadowNode(facebook::react::ShadowNode const&, facebook::react::ShadowNodeFragment const&)
-   1 SUMMARY: ThreadSanitizer: data race YGNode.cpp:282 in YGNodeGetOwner
-   1 SUMMARY: ThreadSanitizer: data race in std::__1::__shared_ptr_emplace<facebook::react::Task, std::__1::allocator<facebook::react::Task>>::__on_zero_shared()
+```bash
+# using npm
+npm run android
+
+# OR using Yarn
+yarn android
 ```
 
-Both Yoga summaries are the same race: `updateYogaChildrenOwnersIfNeeded` (inlined into the `YogaLayoutableShadowNode`
-clone constructor at line 130) writes the owner of a shared child while the other commit reads or writes it during
-layout.
+### For iOS
+
+First, make sure you install dependencies with:
+
+```bash
+cd ios && bundle install && bundle exec pod install
+```
+
+Then you can run the iOS app with:
+
+```bash
+# using npm
+npm run ios
+
+# OR using Yarn
+yarn ios
+```
+
+If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+
+This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+
+## Step 3: Modifying your App
+
+Now that you have successfully run the app, let's modify it.
+
+1. Open `App.tsx` in your text editor of choice and edit some lines.
+2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+
+   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
